@@ -1,14 +1,16 @@
 spring:
   application:
     name: complaint_system
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/complaint_system
-    username: postgres
-    password: Prsnapsql@12
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/complaint_system}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
+
 jwt:
-  secret: change-this-to-a-long-random-secret-key-for-development-only
+  secret: ${JWT_SECRET}

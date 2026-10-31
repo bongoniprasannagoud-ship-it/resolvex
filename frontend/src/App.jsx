@@ -16,12 +16,15 @@ import {
   Users,
   LogOut,
   ShieldCheck,
+  BarChart3,
 } from 'lucide-react'
 
+import AdminAnalyticsPage from "./AdminAnalyticsPage.jsx";
 import LoginPage from './LoginPage.jsx'
 import StudentComplaintsPage from './StudentComplaintsPage.jsx'
 import StaffComplaintsPage from './StaffComplaintsPage.jsx'
 import AdminComplaintsPage from './AdminComplaintsPage.jsx'
+import StaffManagementPage from './StaffManagementPage.jsx'
 import { apiFetch } from './api'
 
 function ProtectedRoute({ allowedRoles }) {
@@ -76,10 +79,20 @@ function DashboardLayout() {
     ...(role === 'ADMIN'
       ? [
           {
-            label: 'Users & assignments',
-            path: '/admin/assignments',
+            label: 'Staff Management',
+            path: '/admin/staff',
             icon: Users,
           },
+          {
+            label: 'Complaint Assignments',
+            path: '/admin/assignments',
+            icon: ClipboardList,
+          },
+          {
+            label: "Analytics & Reports",
+            path: "/admin/analytics",
+            icon: BarChart3
+        },
         ]
       : []),
   ]
@@ -147,6 +160,7 @@ function DashboardLayout() {
 
 function DashboardHome() {
   const role = sessionStorage.getItem('role')
+  const navigate = useNavigate()
 
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(false)
@@ -200,12 +214,14 @@ function DashboardHome() {
       {
         label: 'Total complaints',
         value: complaints.length,
+        filter: 'all',
       },
       {
         label: 'Pending review',
         value: complaints.filter(
           (c) => c.manualReviewRequired
         ).length,
+        filter: 'pending-review',
       },
       {
         label: 'Unassigned',
@@ -215,24 +231,28 @@ function DashboardHome() {
             c.departmentCode &&
             !c.manualReviewRequired
         ).length,
+        filter: 'unassigned',
       },
       {
         label: 'Assigned',
         value: complaints.filter(
           (c) => c.status === 'ASSIGNED'
         ).length,
+        filter: 'ASSIGNED',
       },
       {
         label: 'In progress',
         value: complaints.filter(
           (c) => c.status === 'IN_PROGRESS'
         ).length,
+        filter: 'IN_PROGRESS',
       },
       {
         label: 'Resolved',
         value: complaints.filter(
           (c) => ['RESOLVED', 'CLOSED'].includes(c.status)
         ).length,
+        filter: 'resolved',
       },
     ]
 
@@ -286,9 +306,13 @@ function DashboardHome() {
             {/* Complaint statistics */}
             <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {stats.map((item) => (
-                <div
+                <button
+                  type="button"
                   key={item.label}
-                  className="rounded-2xl border border-slate-800 bg-slate-900 p-6"
+                  onClick={() =>
+                    navigate(`/admin/complaints?filter=${item.filter}`)
+                  }
+                  className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-left transition hover:border-indigo-500 hover:bg-slate-800"
                 >
                   <p className="text-sm text-slate-400">
                     {item.label}
@@ -297,14 +321,16 @@ function DashboardHome() {
                   <p className="mt-3 text-3xl font-bold">
                     {item.value}
                   </p>
-                </div>
+
+                  <p className="mt-3 text-xs text-indigo-400">
+                    View complaints →
+                  </p>
+                </button>
               ))}
             </div>
 
             {/* Status and department breakdowns */}
             <div className="mt-8 grid gap-6 xl:grid-cols-2">
-
-              {/* Complaint status breakdown */}
               <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
                 <h3 className="text-lg font-semibold">
                   Complaint status breakdown
@@ -348,7 +374,6 @@ function DashboardHome() {
                 </div>
               </section>
 
-              {/* Department workload */}
               <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
                 <h3 className="text-lg font-semibold">
                   Department-wise complaints
@@ -424,18 +449,6 @@ function DashboardHome() {
   )
 }
 
-function SectionPlaceholder({ title }) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8">
-      <h2 className="text-2xl font-bold">{title}</h2>
-
-      <p className="mt-3 text-slate-400">
-        This section will be connected to your existing Spring Boot APIs next.
-      </p>
-    </div>
-  )
-}
-
 function App() {
   return (
     <BrowserRouter>
@@ -475,6 +488,11 @@ function App() {
               path="assignments"
               element={<AdminComplaintsPage />}
             />
+            <Route
+              path="staff"
+              element={<StaffManagementPage />}
+            />
+            <Route path="analytics" element={<AdminAnalyticsPage />} />
           </Route>
         </Route>
 

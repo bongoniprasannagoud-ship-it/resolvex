@@ -1,17 +1,20 @@
-
 package com.college.complaint_system.controller;
 
-
+import com.college.complaint_system.dto.AnalyticsResponse;
+import com.college.complaint_system.service.AnalyticsService;
+import com.college.complaint_system.dto.AnalyticsResponse;
 import com.college.complaint_system.dto.AssignComplaintRequest;
 import com.college.complaint_system.dto.ComplaintResponse;
+import com.college.complaint_system.dto.CreateStaffRequest;
+import com.college.complaint_system.dto.DepartmentOptionResponse;
 import com.college.complaint_system.dto.ReviewComplaintRequest;
+import com.college.complaint_system.dto.StaffOptionResponse;
+import com.college.complaint_system.dto.UpdateStaffRequest;
 import com.college.complaint_system.entity.Complaint;
+import com.college.complaint_system.service.AdminManagementService;
 import com.college.complaint_system.service.ComplaintService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import com.college.complaint_system.dto.StaffOptionResponse;
-import com.college.complaint_system.entity.UserRole;
-import com.college.complaint_system.repository.UserRepository;
 
 import java.util.List;
 
@@ -20,15 +23,50 @@ import java.util.List;
 public class AdminController {
 
     private final ComplaintService complaintService;
-    private final UserRepository userRepository;
+    private final AdminManagementService adminManagementService;
+    private final AnalyticsService analyticsService;
 
     public AdminController(
-        ComplaintService complaintService,
-        UserRepository userRepository
-) {
-    this.complaintService = complaintService;
-    this.userRepository = userRepository;
-}
+            ComplaintService complaintService,
+            AdminManagementService adminManagementService,
+            AnalyticsService analyticsService) {
+
+        this.complaintService = complaintService;
+        this.adminManagementService = adminManagementService;
+        this.analyticsService = analyticsService;
+    }
+
+    // ---------------- STAFF MANAGEMENT ----------------
+
+    @GetMapping("/staff")
+    public List<StaffOptionResponse> getStaff() {
+        return adminManagementService.getAllStaff();
+    }
+
+    @PostMapping("/staff")
+    public StaffOptionResponse createStaff(
+            @Valid @RequestBody CreateStaffRequest request) {
+
+        return adminManagementService.createStaff(request);
+    }
+
+    @PutMapping("/staff/{staffId}")
+    public StaffOptionResponse updateStaff(
+            @PathVariable Long staffId,
+            @Valid @RequestBody UpdateStaffRequest request) {
+
+        return adminManagementService.updateStaff(staffId, request);
+    }
+
+    // ---------------- DEPARTMENT MANAGEMENT ----------------
+
+    @GetMapping("/departments")
+    public List<DepartmentOptionResponse> getDepartments() {
+        return adminManagementService.getAllDepartments();
+    }
+
+    // ---------------- COMPLAINT MANAGEMENT ----------------
+
     @PutMapping("/complaints/{complaintId}/assign")
     public ComplaintResponse assignComplaint(
             @PathVariable Long complaintId,
@@ -60,13 +98,10 @@ public class AdminController {
                 .toList();
     }
 
-    @GetMapping("/staff")
-public List<StaffOptionResponse> getStaff() {
-    return userRepository.findByRole(UserRole.STAFF)
-            .stream()
-            .map(StaffOptionResponse::from)
-            .toList();
-}
+    @GetMapping("/analytics")
+    public AnalyticsResponse getAnalytics() {
+        return analyticsService.getAnalytics();
+    }
 
     @PatchMapping("/complaints/{complaintId}/review")
     public ComplaintResponse reviewComplaint(

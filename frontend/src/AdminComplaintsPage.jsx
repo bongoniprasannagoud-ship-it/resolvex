@@ -1,5 +1,5 @@
-
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   RefreshCw,
   ClipboardList,
@@ -32,6 +32,7 @@ const CATEGORIES = [
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
 function AdminComplaintsPage() {
+
   const [complaints, setComplaints] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -49,6 +50,13 @@ const [assignmentError, setAssignmentError] = useState('')
 const [assignmentMessage, setAssignmentMessage] = useState('')
 const [selectedStaff, setSelectedStaff] = useState({})
 const [assigningId, setAssigningId] = useState(null)
+const [searchParams, setSearchParams] = useSearchParams()
+
+const [searchText, setSearchText] = useState('')
+const [departmentFilter, setDepartmentFilter] = useState('')
+const [priorityFilter, setPriorityFilter] = useState('')
+
+const statusFilter = searchParams.get('filter') || 'all'
 
 
   const loadComplaints = useCallback(async () => {
@@ -229,6 +237,70 @@ useEffect(() => {
       !complaint.manualReviewRequired
   ).length
 
+  const filteredComplaints = complaints.filter((complaint) => {
+  const search = searchText.trim().toLowerCase()
+
+  const matchesSearch =
+    !search ||
+    String(complaint.id).includes(search) ||
+    (complaint.title || '').toLowerCase().includes(search)
+
+  let matchesStatus = true
+
+  if (statusFilter === 'pending-review') {
+    matchesStatus = complaint.manualReviewRequired
+  } else if (statusFilter === 'unassigned') {
+    matchesStatus =
+      !complaint.assignedToName &&
+      complaint.departmentCode &&
+      !complaint.manualReviewRequired
+  } else if (statusFilter === 'resolved') {
+    matchesStatus = ['RESOLVED', 'CLOSED'].includes(
+      complaint.status
+    )
+  } else if (statusFilter !== 'all') {
+    matchesStatus = complaint.status === statusFilter
+  }
+
+  const matchesDepartment =
+    !departmentFilter ||
+    complaint.departmentName === departmentFilter
+
+  const matchesPriority =
+    !priorityFilter ||
+    complaint.priority === priorityFilter
+
+  return (
+    matchesSearch &&
+    matchesStatus &&
+    matchesDepartment &&
+    matchesPriority
+  )
+})
+
+const departments = [
+  ...new Set(
+    complaints
+      .map((complaint) => complaint.departmentName)
+      .filter(Boolean)
+  ),
+].sort()
+
+function updateStatusFilter(value) {
+  if (value === 'all') {
+    setSearchParams({})
+  } else {
+    setSearchParams({ filter: value })
+  }
+}
+
+function clearFilters() {
+  setSearchText('')
+  setDepartmentFilter('')
+  setPriorityFilter('')
+  setSearchParams({})
+}
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -262,6 +334,8 @@ useEffect(() => {
         </div>
       )}
 
+
+      {statusFilter === 'all' && (
       <div className="grid gap-4 sm:grid-cols-3">
         {[
           { label: 'Total complaints', value: complaints.length },
@@ -277,8 +351,9 @@ useEffect(() => {
           </div>
         ))}
       </div>
+      )}
         
-        
+{(statusFilter === 'all' || statusFilter === 'pending-review') && (
 <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
   <div className="border-b border-slate-800 p-5">
     <h3 className="text-lg font-semibold">Manual review queue</h3>
@@ -407,9 +482,10 @@ useEffect(() => {
     </div>
   )}
 </section>
+)}
 
 
-
+{(statusFilter === 'all' || statusFilter === 'unassigned') && (
 <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
   <div className="border-b border-slate-800 p-5">
     <h3 className="text-lg font-semibold">Manual assignment</h3>
@@ -536,8 +612,92 @@ useEffect(() => {
     </div>
   )}
 </section>
+)}
 
+       {/* Complaint filters */}
+<section className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+  <div className="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h3 className="font-semibold">Filter complaints</h3>
+      <p className="mt-1 text-sm text-slate-400">
+        Search and narrow down complaint records.
+      </p>
+    </div>
 
+    <button
+      type="button"
+      onClick={clearFilters}
+      className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800"
+    >
+      Clear filters
+    </button>
+  </div>
+
+  <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <input
+      type="text"
+      value={searchText}
+      onChange={(event) => setSearchText(event.target.value)}
+      placeholder="Search title or complaint ID"
+      className="min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500"
+    />
+
+    <select
+      value={statusFilter}
+      onChange={(event) => updateStatusFilter(event.target.value)}
+      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100"
+    >
+      <option value="all">All statuses</option>
+      <option value="pending-review">Pending review</option>
+      <option value="unassigned">Unassigned</option>
+      <option value="OPEN">Open</option>
+      <option value="ROUTED">Routed</option>
+      <option value="ASSIGNED">Assigned</option>
+      <option value="IN_PROGRESS">In progress</option>
+      <option value="RESOLVED">Resolved</option>
+      <option value="CLOSED">Closed</option>
+      <option value="REOPENED">Reopened</option>
+    </select>
+
+    <select
+      value={departmentFilter}
+      onChange={(event) => setDepartmentFilter(event.target.value)}
+      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100"
+    >
+      <option value="">All departments</option>
+      {departments.map((department) => (
+        <option key={department} value={department}>
+          {department}
+        </option>
+      ))}
+    </select>
+
+    <select
+      value={priorityFilter}
+      onChange={(event) => setPriorityFilter(event.target.value)}
+      className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100"
+    >
+      <option value="">All priorities</option>
+      {PRIORITIES.map((priority) => (
+        <option key={priority} value={priority}>
+          {priority}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <p className="mt-4 text-sm text-slate-400">
+    Showing{' '}
+    <span className="font-semibold text-slate-100">
+      {filteredComplaints.length}
+    </span>{' '}
+    of{' '}
+    <span className="font-semibold text-slate-100">
+      {complaints.length}
+    </span>{' '}
+    complaints
+  </p>
+</section>
       <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
         <div className="flex items-center gap-3 border-b border-slate-800 p-5">
           <ClipboardList size={20} className="text-indigo-400" />
@@ -546,13 +706,13 @@ useEffect(() => {
 
         {loading ? (
           <p className="p-6 text-slate-400">Loading complaints...</p>
-        ) : complaints.length === 0 ? (
+       ) : filteredComplaints.length === 0 ? (
           <p className="p-6 text-slate-400">
-            No complaints found.
-          </p>
+            No complaints match the selected filters.
+            </p>
         ) : (
           <div className="divide-y divide-slate-800">
-            {complaints.map((complaint) => (
+           {filteredComplaints.map((complaint) => (
               <article key={complaint.id} className="space-y-3 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
