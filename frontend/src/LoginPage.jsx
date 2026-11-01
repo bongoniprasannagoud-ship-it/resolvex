@@ -96,7 +96,7 @@ function LoginPage() {
               <ShieldCheck size={28} />
             </div>
             <span className="text-lg font-semibold tracking-wide">
-              CampusCare
+              ResolveX
             </span>
           </div>
 
@@ -124,7 +124,7 @@ function LoginPage() {
               <div className="mb-4 inline-flex rounded-xl bg-indigo-500/15 p-3 text-indigo-300">
                 <ShieldCheck size={28} />
               </div>
-              <h1 className="text-2xl font-bold">CampusCare</h1>
+              <h1 className="text-2xl font-bold">ResolveX</h1>
             </div>
 
             <div className="mb-8">

@@ -104,7 +104,7 @@ function DashboardLayout() {
           <div className="rounded-xl bg-indigo-600 p-2">
             <ShieldCheck size={24} />
           </div>
-          <span className="text-lg font-bold">CampusCare</span>
+          <span className="text-lg font-bold">ResolveX</span>
         </div>
 
         <p className="mb-3 mt-8 text-xs font-semibold uppercase tracking-widest text-slate-500">
@@ -138,7 +138,7 @@ function DashboardLayout() {
         <header className="flex items-center justify-between border-b border-slate-800 px-6 py-5 md:px-10">
           <div>
             <p className="text-sm text-slate-400">
-              CampusCare workspace
+              ResolveX workspace
             </p>
             <h1 className="mt-1 text-xl font-bold">
               {accountLabels[role]} dashboard
